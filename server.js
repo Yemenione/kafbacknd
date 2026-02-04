@@ -49,23 +49,15 @@ app.get('/api/test', async (req, res) => {
 // --- STORE CONFIGURATION ENDPOINT ---
 app.get('/api/config', async (req, res) => {
     try {
-        // Try to get config from database first
-        const dbConfig = await prisma.store_config.findMany();
-        const configMap = {};
-        dbConfig.forEach(item => {
-            configMap[item.key] = item.value;
-        });
-
-        // Return configuration with fallbacks to environment variables
+        // Return configuration populated by loadConfig() with fallback to env
         res.json({
-            site_name: configMap.site_name || 'Yemeni Market',
-            site_logo: configMap.site_logo || '',
-            stripe_public_key: configMap.stripe_public_key || process.env.STRIPE_PUBLIC_KEY || '',
+            site_name: config.site_name || process.env.SITE_NAME || 'Yemeni Market',
+            site_logo: config.site_logo || process.env.SITE_LOGO || '',
+            stripe_public_key: config.stripe_public_key || process.env.STRIPE_PUBLIC_KEY || '',
             // Add other public config as needed
         });
     } catch (error) {
         console.error('Error fetching store config:', error);
-        // Fallback to environment variables if database fails
         res.json({
             site_name: 'Yemeni Market',
             site_logo: '',
@@ -763,23 +755,6 @@ app.put('/api/admin/orders/:id/status', checkAdmin, async (req, res) => {
     } catch (error) {
         console.error("Update Status Error:", error);
         res.status(500).json({ error: "Failed to update order status" });
-    }
-});
-// --- PUBLIC CONFIG ROUTE ---
-app.get('/api/config', async (req, res) => {
-    try {
-        // Only return configs marked as public in the database
-        const publicConfigs = await prisma.store_config.findMany({
-            where: { isPublic: true }
-        });
-
-        const configMap = {};
-        publicConfigs.forEach(c => configMap[c.key] = c.value);
-
-        res.json(configMap);
-    } catch (error) {
-        console.error("Failed to fetch public config:", error);
-        res.status(500).json({ error: 'Failed to load configuration' });
     }
 });
 

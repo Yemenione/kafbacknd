@@ -23,7 +23,6 @@ Thumbs.db
 *.swo
 
 # Prisma
-.prisma/
 prisma/.env
 
 # Build

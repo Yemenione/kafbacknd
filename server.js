@@ -17,8 +17,13 @@ const express = require('express');
 const cors = require('cors');
 // Import PrismaClient from the locally generated directory for better deployment reliability
 const { PrismaClient } = require('./prisma/client');
-const bcrypt = require('bcrypt');
+const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+console.log('--- SERVER BOOTING ---');
+console.log('Timestamp:', new Date().toISOString());
+console.log('Node Version:', process.version);
+console.log('Current Directory:', __dirname);
 
 const prisma = new PrismaClient();
 const app = express();

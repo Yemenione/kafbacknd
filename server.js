@@ -43,6 +43,10 @@ const corsOptions = {
     allowedHeaders: ['Content-Type', 'Authorization']
 };
 
+app.get('/health', (req, res) => {
+    res.status(200).send('OK');
+});
+
 app.use(cors(corsOptions));
 app.use(express.json());
 
@@ -1764,8 +1768,15 @@ app.get('/', (req, res) => {
     });
 });
 
-loadConfig().then(() => {
-    app.listen(PORT, () => {
-        console.log(`Server running on port ${PORT}`);
+
+// Start server first, then load config
+app.listen(PORT, () => {
+    console.log(`--- SERVER STARTED ---`);
+    console.log(`Port: ${PORT}`);
+    console.log(`Target: https://api.yemenimarket.fr`);
+
+    // Load config asynchronously so it doesn't block startup
+    loadConfig().catch(err => {
+        console.error('Initial config load failed, but server is running:', err);
     });
 });

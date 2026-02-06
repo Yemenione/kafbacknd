@@ -1,19 +1,35 @@
-// Set up global error handlers to catch startup crashes
+// 1. IMMEDIATE STARTUP (BEFORE ANY LIBRARIES)
+const express = require('express');
+const app = express();
+
+// Set up global error handlers ASAP
 process.on('uncaughtException', (err) => {
-    console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
-    console.error(err.name, err.message, err.stack);
+    console.error('UNCAUGHT EXCEPTION! 💥', err.name, err.message, err.stack);
     process.exit(1);
 });
 
 process.on('unhandledRejection', (err) => {
-    console.error('UNHANDLED REJECTION! 💥 Shutting down...');
-    console.error(err.name, err.message, err.stack);
+    console.error('UNHANDLED REJECTION! 💥', err.name, err.message, err.stack);
     process.exit(1);
 });
 
+// Use the port provided by the hosting environment, or fallback to 5000
+// IMPORTANT: We check this BEFORE loading .env to ensure the platform PORT is not overwritten
+const PORT = process.env.PORT || 5000;
+
+// START LISTENING IMMEDIATELY TO AVOID 503
+app.listen(PORT, () => {
+    console.log('--- SERVER STARTED ---');
+    console.log(`Port: ${PORT}`);
+    console.log(`Node: ${process.version}`);
+});
+
+// 2. LOAD LIBRARIES & CONFIG LATER
 const path = require('path');
-require('dotenv').config({ path: path.join(__dirname, '.env') });
-const express = require('express');
+const dotenv = require('dotenv');
+// Load .env but manually ensure we don't mess with PORT if it's already set
+dotenv.config({ path: path.join(__dirname, '.env') });
+
 const cors = require('cors');
 // Import PrismaClient from the locally generated directory for better deployment reliability
 const { PrismaClient } = require('./prisma/client');
@@ -22,12 +38,9 @@ const jwt = require('jsonwebtoken');
 
 console.log('--- SERVER BOOTING ---');
 console.log('Timestamp:', new Date().toISOString());
-console.log('Node Version:', process.version);
 console.log('Current Directory:', __dirname);
 
 const prisma = new PrismaClient();
-const app = express();
-const PORT = process.env.PORT || 5000;
 
 // CORS Configuration
 const corsOptions = {
@@ -1770,13 +1783,9 @@ app.get('/', (req, res) => {
 
 
 // Start server first, then load config
-app.listen(PORT, () => {
-    console.log(`--- SERVER STARTED ---`);
-    console.log(`Port: ${PORT}`);
-    console.log(`Target: https://api.yemenimarket.fr`);
+// (Listener moved to top)
 
-    // Load config asynchronously so it doesn't block startup
-    loadConfig().catch(err => {
-        console.error('Initial config load failed, but server is running:', err);
-    });
+// Load config asynchronously so it doesn't block startup
+loadConfig().catch(err => {
+    console.error('Initial config load failed:', err);
 });

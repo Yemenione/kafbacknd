@@ -1,8 +1,22 @@
+// Set up global error handlers to catch startup crashes
+process.on('uncaughtException', (err) => {
+    console.error('UNCAUGHT EXCEPTION! 💥 Shutting down...');
+    console.error(err.name, err.message, err.stack);
+    process.exit(1);
+});
+
+process.on('unhandledRejection', (err) => {
+    console.error('UNHANDLED REJECTION! 💥 Shutting down...');
+    console.error(err.name, err.message, err.stack);
+    process.exit(1);
+});
+
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 const express = require('express');
 const cors = require('cors');
-const { PrismaClient } = require('@prisma/client');
+// Import PrismaClient from the locally generated directory for better deployment reliability
+const { PrismaClient } = require('./prisma/client');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -16,7 +30,8 @@ const corsOptions = {
         'http://localhost:5173',
         'http://localhost:3000',
         'https://www.yemenimarket.fr',
-        'https://yemenimarket.fr'
+        'https://yemenimarket.fr',
+        'https://mistyrose-falcon-844647.hostingersite.com'
     ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],

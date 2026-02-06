@@ -1,44 +1,46 @@
-// 1. IMMEDIATE STARTUP (BEFORE ANY LIBRARIES)
+// 1. ABSOLUTE TOP - NO DEPENDENCIES EXCEPT EXPRESS
 const express = require('express');
 const app = express();
-
-// Set up global error handlers ASAP
-process.on('uncaughtException', (err) => {
-    console.error('UNCAUGHT EXCEPTION! 💥', err.name, err.message, err.stack);
-    process.exit(1);
-});
-
-process.on('unhandledRejection', (err) => {
-    console.error('UNHANDLED REJECTION! 💥', err.name, err.message, err.stack);
-    process.exit(1);
-});
-
-// Use the port provided by the hosting environment, or fallback to 5000
-// IMPORTANT: We check this BEFORE loading .env to ensure the platform PORT is not overwritten
 const PORT = process.env.PORT || 5000;
 
-// START LISTENING IMMEDIATELY TO AVOID 503
-app.listen(PORT, () => {
-    console.log('--- SERVER STARTED ---');
-    console.log(`Port: ${PORT}`);
-    console.log(`Node: ${process.version}`);
+// Health check defined immediately
+app.get('/health', (req, res) => res.status(200).send('OK - SERVER ALIVE'));
+app.get('/debug', (req, res) => {
+    res.json({
+        status: 'alive',
+        node: process.version,
+        env: process.env.NODE_ENV || 'not_set',
+        port: PORT,
+        cwd: process.cwd(),
+        platform: process.platform
+    });
 });
 
-// 2. LOAD LIBRARIES & CONFIG LATER
+// START LISTENING IMMEDIATELY
+// This ensures that Hostinger's proxy sees a live process ASAP
+const server = app.listen(PORT, () => {
+    console.log(`--- BOOTSTRAP SUCCESS ---`);
+    console.log(`Listening on port: ${PORT}`);
+});
+
+// 2. ERROR HANDLERS
+process.on('uncaughtException', (err) => {
+    console.error('CRITICAL: Uncaught Exception', err);
+    // Don't exit immediately in production if possible, but for 503 debugging we must see this
+});
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('CRITICAL: Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+// 3. LOAD LIBRARIES & CONFIGURATION
 const path = require('path');
 const dotenv = require('dotenv');
-// Load .env but manually ensure we don't mess with PORT if it's already set
 dotenv.config({ path: path.join(__dirname, '.env') });
 
 const cors = require('cors');
-// Import PrismaClient from the locally generated directory for better deployment reliability
 const { PrismaClient } = require('./prisma/client');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-
-console.log('--- SERVER BOOTING ---');
-console.log('Timestamp:', new Date().toISOString());
-console.log('Current Directory:', __dirname);
 
 const prisma = new PrismaClient();
 

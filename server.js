@@ -1,3 +1,10 @@
+// 0. FILE SYSTEM LOGGING
+const fs = require('fs');
+const bootInfo = `--- BOOT ATTEMPT ---\nTime: ${new Date().toISOString()}\nNode: ${process.version}\nPort: ${process.env.PORT || 'unassigned'}\nDirectory: ${__dirname}\n`;
+try {
+    fs.appendFileSync('boot_log.txt', bootInfo);
+} catch (e) { }
+
 // 1. ABSOLUTE TOP - NO DEPENDENCIES EXCEPT EXPRESS
 const express = require('express');
 const app = express();
